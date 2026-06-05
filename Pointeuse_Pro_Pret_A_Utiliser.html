@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pointeuse Pro</title>
+<style>
+body{margin:0;font-family:Arial;background:#121212;color:#fff}
+header{padding:15px;background:#1f1f1f}
+.tabs{display:flex}
+.tabs button{flex:1;padding:12px;border:0;background:#222;color:#fff}
+.page{display:none;padding:15px}
+.active{display:block}
+.card{background:#1e1e1e;padding:15px;border-radius:12px;margin-bottom:10px}
+input{width:100%;padding:8px;margin:5px 0}
+button.action{width:100%;padding:12px;margin:5px 0}
+</style>
+</head>
+<body>
+<header><h2>⏱ Pointeuse Pro</h2></header>
+
+<div class="tabs">
+<button onclick="show('pointage')">Pointer</button>
+<button onclick="show('historique')">Historique</button>
+<button onclick="show('recap')">Récap</button>
+<button onclick="show('reglages')">Réglages</button>
+</div>
+
+<div id="pointage" class="page active">
+<div class="card">
+<h3>Pointage</h3>
+<button class="action" onclick="startWork()">▶ Début</button>
+<button class="action" onclick="startPause()">⏸ Pause</button>
+<button class="action" onclick="endPause()">▶ Reprise</button>
+<button class="action" onclick="stopWork()">⏹ Fin</button>
+<div id="status"></div>
+</div>
+</div>
+
+<div id="historique" class="page">
+<div class="card"><div id="history"></div></div>
+</div>
+
+<div id="recap" class="page">
+<div class="card">
+<p>Total heures : <span id="th">0</span></p>
+<p>Complémentaires : <span id="hc">0</span></p>
+<p>Supplémentaires : <span id="hs">0</span></p>
+</div>
+</div>
+
+<div id="reglages" class="page">
+<div class="card">
+<label>Contrat hebdo</label>
+<input id="contrat" type="number" value="35">
+<label>Limite journalière</label>
+<input id="limite" type="number" value="7">
+<label>Taux horaire (€)</label>
+<input id="taux" type="number" value="12">
+</div>
+</div>
+
+<script>
+let entries=JSON.parse(localStorage.getItem("entries")||"[]");
+let start=null,pauseStart=null,pauseMs=0;
+
+function show(id){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+render();
+}
+function startWork(){
+start=new Date();
+pauseMs=0;
+status.innerHTML="Travail démarré";
+}
+function startPause(){
+if(start) pauseStart=new Date();
+}
+function endPause(){
+if(pauseStart){pauseMs+=new Date()-pauseStart;pauseStart=null;}
+}
+function stopWork(){
+if(!start) return;
+let end=new Date();
+let h=((end-start-pauseMs)/3600000);
+entries.push({date:new Date().toLocaleDateString(),hours:h});
+localStorage.setItem("entries",JSON.stringify(entries));
+start=null;
+render();
+}
+function render(){
+history.innerHTML=entries.map(e=>`<p>${e.date} : ${e.hours.toFixed(2)} h</p>`).join('');
+let total=entries.reduce((a,b)=>a+b.hours,0);
+let contrat=+document.getElementById('contrat').value||35;
+document.getElementById('th').textContent=total.toFixed(2);
+document.getElementById('hc').textContent=Math.max(0,total-contrat).toFixed(2);
+document.getElementById('hs').textContent=Math.max(0,total-35).toFixed(2);
+}
+render();
+</script>
+</body>
+</html>
